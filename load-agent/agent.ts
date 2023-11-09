@@ -53,6 +53,7 @@ var config = require('./config.js')
 
 var deferred = require('deferred')
 var process = require('process')
+var bs58 = require('bs58')
 
 const characters =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -60,7 +61,7 @@ const legacyIndyCredentialFormat = new LegacyIndyCredentialFormatService()
 const legacyIndyProofFormat = new LegacyIndyProofFormatService()
 
 function generateString(length) {
-  let result = ' '
+  let result = ''
   const charactersLength = characters.length
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength))
@@ -68,6 +69,14 @@ function generateString(length) {
 
   return result
 }
+
+const randomBytes = (count) => {
+	const result = Array(count);
+  	for (let i = 0; i < count; ++i) {
+    	result[i] = Math.floor(256 * Math.random());
+    }
+  	return result;
+};
 
 const initializeAgent = async (withMediation, port, agentConfig = null) => {
   // Simple agent configuration. This sets some basic fields like the wallet
@@ -82,7 +91,10 @@ const initializeAgent = async (withMediation, port, agentConfig = null) => {
       label: generateString(14),
       walletConfig: {
         id: generateString(32),
-        key: generateString(32),
+        //key: await indySdk.generateWalletKey({seed: generateString(32)}),
+        key: bs58.encode(randomBytes(32)),
+        keyDerivationMethod: "RAW",
+        // key: generateString(32),
       },
       autoAcceptConnections: true,
       endpoints: endpoints,
@@ -96,16 +108,11 @@ const initializeAgent = async (withMediation, port, agentConfig = null) => {
   let modules = {
     indySdk: new IndySdkModule({
       indySdk,
-      networks: [config.ledger]
+//      networks: [config.ledger]
     }),
 //       askar: new AskarModule({
 //         ariesAskar,
 //       }),
-    mediationRecipient: new MediationRecipientModule({
-      mediatorInvitationUrl: mediation_url,
-      mediatorPickupStrategy: MediatorPickupStrategy.PickUpV2,
-//        mediatorPickupStrategy: MediatorPickupStrategy.Implicit,
-    }),
     anoncreds: new AnonCredsModule({
       registries: [new IndySdkAnonCredsRegistry()],
     }),
@@ -138,8 +145,11 @@ const initializeAgent = async (withMediation, port, agentConfig = null) => {
   // configure mediator or endpoints
   if (withMediation) {
     delete agentConfig['endpoints']
-  } else {
-    delete modules['mediationRecipient']
+    modules['mediationRecipient'] = new MediationRecipientModule({
+      mediatorInvitationUrl: mediation_url,
+      mediatorPickupStrategy: MediatorPickupStrategy.PickUpV2,
+//        mediatorPickupStrategy: MediatorPickupStrategy.Implicit,
+    })
   }
 
   // A new instance of an agent is created here
