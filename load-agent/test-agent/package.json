@@ -1,0 +1,16 @@
+{
+  "name": "test-agent",
+  "module": "index.ts",
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@aries-framework/askar": "^0.4.0",
+    "@aries-framework/core": "^0.4.0",
+    "@aries-framework/node": "^0.4.0",
+    "@hyperledger/aries-askar-nodejs": "^0.1.0"
+  }
+}
